@@ -1,0 +1,290 @@
+<%@ page import="java.util.Calendar" %>
+<%@ page language='java' pageEncoding='utf-8' %>
+<%@include file="../header.jsp" %>
+<link rel='stylesheet' href='${ctx}/thirdpart/jqselectable/skin/selectable/style.css'>
+<link rel='stylesheet' href='${ctx}/thirdpart/ztree/zTreeStyle/zTreeStyle.css'>
+<link rel='stylesheet' href='${ctx}/thirdpart/jPaginate/css/style.css'>
+<link rel='stylesheet' href='${ctx}/static/css/document/search.css'>
+<link rel='stylesheet' href='${ctx}/static/css/font-awesome.min.css'>
+</head>
+<body>
+<%@include file="../nav.jsp" %>
+<nav id="documentSearchHeader" style="height: 46px;margin-bottom: 0px;">
+    <ul id="conditionType" class="nav nav-pills">
+        <li><a href="${ctx}/index">首页</a></li>
+        <li class="<c:if test="${searchType == null || searchType == '所有文档'}">active</c:if>"><a href="${ctx}/document/search">所有文档</a></li>
+        <li class="<c:if test="${searchType == '标准教案'}">active</c:if>"><a href="${ctx}/document/search?searchType=标准教案" data="11">标准教案</a></li>
+        <li class="<c:if test="${searchType == '试卷'}">active</c:if>"><a href="${ctx}/document/search?searchType=试卷" data="12">试卷</a></li>
+        <li class="<c:if test="${searchType == '课件'}">active</c:if>"><a href="${ctx}/document/search?searchType=课件" data="13">课件</a></li>
+        <li class="<c:if test="${searchType == '教学视频'}">active</c:if>"><a href="${ctx}/document/search?searchType=教学视频" data="15">教学视频</a></li>
+        <li class="<c:if test="${searchType == '导学案'}">active</c:if>"><a href="${ctx}/document/search?searchType=导学案" data="14">导学案</a></li>
+        <li class="<c:if test="${searchType == '多媒体'}">active</c:if>"><a href="${ctx}/document/search?searchType=多媒体">多媒体</a></li>
+        <li class="<c:if test="${searchType == '小升初'}">active</c:if>"><a href="${ctx}/document/search?searchType=小升初">小升初</a></li>
+        <li class="<c:if test="${searchType == '中考'}">active</c:if>"><a href="${ctx}/document/search?searchType=中考">中考</a></li>
+        <li class="<c:if test="${searchType == '高考'}">active</c:if>"><a href="${ctx}/document/search?searchType=高考">高考</a></li>
+    </ul>
+    <div class="container-fluid" style="height: 5px;background-color: #785cb3;"></div>
+</nav>
+<ol class="breadcrumb" style="margin-bottom: 0px;margin-top: 0px;">
+    <li><a href="${ctx}/index">教学资源共享平台</a></li>
+    <li class="active">${searchType}</li>
+</ol>
+<div class="container-fluid">
+    <div class="row">
+        <div class="col-sm-2">
+            <div style="height: 40px;width: 100%;">
+                <button id="conditionStepSubjectBtn" class="btn btn-lg btn-purple" style="width: 100%;height: 100%;">
+                    <span class="glyphicon glyphicon-list" style="float: left;"></span>
+                    <span id="conditionStepSubjectDisplay" >学段 学科</span>
+                    <span class="glyphicon glyphicon-menu-down" style="float: right;"></span>
+                </button>
+                <select style="display: none;" id="conditionStepSubject"></select>
+            </div>
+            <div class="upload-div">
+                <a href="${ctx}/document/upload" class="btn btn-lg btn-green btn-block">我要上传</a>
+            </div>
+            <div class="zsd-tree-div">
+                <ul id="conditionMenuTree" class="ztree col-md-12 padding-left-10"></ul>
+            </div>
+        </div>
+        <div class="col-sm-10">
+            <div class="row">
+                <form id="documentSearchFrm" name="search" method="post" action="" onsubmit="return false;">
+                    <div class="input-group input-group-lg input-group-md" style="height: 40px;">
+                            <span style="width: 100%;">
+                                <input id="searchKeyword" value="${searchText}"
+                                       autocomplete="off" placeholder="请输入文档标题/简介"
+                                       style="width:100%;height: 40px;border: #d1db2d 1px solid;outline-color:#d1db2d ;">
+                            </span>
+                            <span class="input-group-btn">
+                                <button id="searchButton" data-role="btn" type="submit"
+                                        class="btn btn-green" style="height: 40px;border: #d1db2d 1px solid;"><span
+                                        style="font-size: 14pt;  position: relative;top: -3px;"><img
+                                        src="${ctx}/static/images/ICON07.png"/>搜&nbsp;&nbsp;索</span></button>
+                            </span>
+                    </div>
+                </form>
+            </div>
+
+            <div class="row" style="border: 1px #B6B6B6 solid;">
+                <div class="container-fluid">
+                    <div id="conditionsRow" class="row">
+                        <%--文档子类型--%>
+                        <div style="float: left;border:0px;border-bottom: solid #a489da 1px;width:100%;">
+                            <c:if test="${searchType != '多媒体'}">
+                            <span id="conditionTypePrev" class="sec-item" style="margin-left: 10px;clear: both;font-size: 11pt;font-weight: bolder;min-width: 66px;margin-bottom: 10px;height:21px;line-height:21px;float:left">类型：</span>
+                            </c:if>
+                            <ul id="conditionSubType" class="sec-item" style="margin-left: -30px;margin-right: -30px;margin-right: -30px;float:left">
+                                <c:choose>
+                                    <c:when test="${searchType == '所有文档' || searchType == '小升初' || searchType == '中考' || searchType == '高考'}">
+                                        <li class="text active"><a>不限</a></li>
+                                        <li class="text"><a data="11">标准教案</a></li>
+                                        <li class="text"><a data="12">试卷</a></li>
+                                        <li class="text"><a data="13">课件</a></li>
+                                        <li class="text"><a data="14">导学案</a></li>
+                                        <li class="text"><a data="15">教学视频</a></li>
+                                        <li class="text"><a>多媒体</a></li>
+                                    </c:when>
+                                    <c:when test="${searchType == '标准教案'}">
+                                        <li class="text active"><a>不限</a></li>
+                                        <li class="text"><a data="1101">同步教案</a></li>
+                                        <li class="text"><a data="1102">复习教案</a></li>
+                                        <li class="text"><a data="1103">专题教案</a></li>
+                                    </c:when>
+                                    <c:when test="${searchType == '试卷'}">
+                                        <li class="text active"><a>不限</a></li>
+                                        <li class="text"><a data="1201">高考真题</a></li>
+                                        <li class="text"><a data="1202">中考真题</a></li>
+                                        <li class="text"><a data="1203">期中试卷</a></li>
+                                        <li class="text"><a data="1204">期末试卷</a></li>
+                                        <li class="text"><a data="1205">联考卷</a></li>
+                                        <li class="text"><a data="1206">模拟卷</a></li>
+                                        <li class="text"><a data="1207">月考卷</a></li>
+                                        <li class="text"><a data="1208">同步练习</a></li>
+                                        <li class="text"><a data="1209">单元测试</a></li>
+                                        <li class="text"><a data="1210">专题汇编</a></li>
+                                    </c:when>
+                                    <c:when test="${searchType == '课件'}">
+                                        <li class="text active"><a>不限</a></li>
+                                        <li class="text"><a data="1301">同步课件</a></li>
+                                        <li class="text"><a data="1302">复习课件</a></li>
+                                        <li class="text"><a data="1303">专题课件</a></li>
+                                        <li class="text"><a data="1304">期末试卷</a></li>
+                                    </c:when>
+                                    <c:when test="${searchType == '导学案'}">
+                                        <li class="text active"><a>不限</a></li>
+                                        <li class="text"><a data="1401">同步导学案</a></li>
+                                        <li class="text"><a data="1402">复习导学案</a></li>
+                                        <li class="text"><a data="1403">专题导学案</a></li>
+                                    </c:when>
+                                    <c:when test="${searchType == '教学视频'}">
+                                        <li class="text active"><a>不限</a></li>
+                                        <li class="text"><a data="1501">微型课</a></li>
+                                        <li class="text"><a data="1502">专题讲座</a></li>
+                                        <li class="text"><a data="1503">同步课程</a></li>
+                                        <li class="text"><a data="1504">演讲视频</a></li>
+                                    </c:when>
+                                </c:choose>
+                            </ul>
+                        </div>
+                        <%--多媒体--%>
+                        <div id="conditionMediaAndAnimationType" style="float: left;border:0px;border-bottom: solid #a489da 1px;width:100%;<c:if test="${searchType == '小升初' || searchType == '中考'|| searchType == '高考' }">display: none;</c:if>">
+                            <c:if test="${searchType == '多媒体'}">
+                            <span  class="sec-item" id="conditionMediaShowTypePrev" style="margin-left: 10px;clear: both;font-size: 11pt;font-weight: bolder;min-width: 66px;margin-bottom: 10px;height:21px;line-height:21px;float:left;">类型：</span>
+                            </c:if>
+                            <span class="sec-item" id="conditionMediaTypePrev" style="margin-left: 10px;font-weight: bolder;clear: both;font-size: 11pt;min-width: 66px;width:5%;margin-bottom: 10px;height:21px;line-height:21px;float:left;display:none;">分类：</span>
+                            <ul id="conditionMediaType" class="sec-item" style="margin-left: -30px;margin-right: -30px;float:left;<c:if test="${searchType != '多媒体'}">display: none;</c:if>">
+                                <li class="text active"><a data="16">动画</a></li>
+                                <li class="text"><a data="17">音频</a></li>
+                            </ul>
+                        </div>
+                        <%--动画--%>
+                        <div style="float: left;border:0px;border-bottom: solid #a489da 1px;width:100%; <c:if test="${searchType == '小升初' || searchType == '中考'|| searchType == '高考' }">display: none;</c:if>" id="conditionAnimationTypeShowHide">
+                            <c:if test="${searchType == '多媒体'}">
+                                <span class="sec-item" id="conditionMediaSubShowTypePrev"   style="margin-left: 10px;font-weight: bolder;clear: both; font-size: 11pt; min-width: 66px; margin-bottom: 10px; height: 21px; line-height: 21px; float: left; <c:if test="${searchType != '多媒体'}">display: none;</c:if>">分类：</span>
+                            </c:if>
+                            <span class="sec-item" id="conditionMediaSubTypePrev" style="margin-left: 10px;font-weight: bolder;clear: both;font-size: 11pt;min-width: 66px;width:5%;margin-bottom: 10px;height:21px;line-height:21px;;float:left;display:none;">分类：</span>
+                            <ul id="conditionAnimationType" class="sec-item" style="margin-left: -30px;margin-right: -30px;width:97%;float:left; <c:if test="${searchType != '多媒体'}">display: none;</c:if>">
+                                <li class="text active"><a>不限</a></li>
+                                <li class="text"><a data="1601">知识点</a></li>
+                                <li class="text"><a data="1602">特色课程</a></li>
+                                <li class="text"><a data="1603">专题</a></li>
+                                <li class="text"><a data="1604">其他</a></li>
+                            </ul>
+                        </div>
+                        <%--音频--%>
+
+                        <div style="float: left;border:0px;border-bottom: solid #a489da 1px;width:100%;<c:if test="${searchType == '小升初' || searchType == '中考'|| searchType == '高考' }">display: none;</c:if>" id="conditionAudioTypeShowHide">
+                             <span class="sec-item" id="conditionAudioTypePrev" style="margin-left: 10px;font-weight: bolder;clear: both;font-size: 11pt;min-width: 66px;width:5%;margin-bottom: 10px;height:21px;line-height:21px;;float:left;display:none;">分类：</span>
+                            <ul id="conditionAudioType" class="sec-item" style="margin-left: -30px;margin-right: -30px;width:97%;float:left;display: none;">
+                                <li class="text active"><a>不限</a></li>
+                                <li class="text"><a data="1701">英语听力</a></li>
+                                <li class="text"><a data="1702">课程录音</a></li>
+                                <li class="text"><a data="1703">其他音频</a></li>
+                            </ul>
+                        </div>
+                        <%--版本--%>
+
+                        <div style="float: left;border:0px;border-bottom: solid #a489da 1px;width:100%;">
+                            <span id="conditionVersionPrev" class="sec-item" style="margin-left: 10px;font-weight: bolder;clear: both;display:none;font-size: 11pt;min-width: 66px;margin-bottom: 10px;height:21px;;line-height:21px;;float:left">版本：</span>
+                            <ul id="conditionVersion" class="sec-item" style="margin-left: -30px;margin-right: -30px;width:97%;float:left"></ul>
+
+                            <%--年级--%>
+                        </div>
+
+                        <div style="float: left;border:0px;border-bottom: solid #a489da 1px;width:100%;">
+                            <span id="conditionGradePrev" class="sec-item" style="margin-left: 10px;font-weight: bolder;clear: both;display:none;font-size: 11pt;min-width: 66px;margin-bottom: 10px;height:21px;;line-height:21px;;float:left"> 年级：</span>
+                            <ul id="conditionGrade" class="sec-item" style="margin-left: -30px;margin-right: -30px;width:97%;float:left;"></ul>
+                        </div>
+                        <%--难度--%>
+                        <c:if test="${searchType == '标准教案' || searchType == '课件' || searchType == '导学案'}">
+
+                            <div style="float: left;border:0px;border-bottom: solid #a489da 1px;width:100%;">
+                                <span class="sec-item" style="margin-left: 10px;font-weight: bolder;clear: both;font-size: 11pt;min-width: 66px;margin-bottom: 10px;height:21px;;line-height:21px;;float:left">难度：</span>
+                                <ul id="conditionDifficulty" class="sec-item" style="margin-left: -30px;margin-right: -30px;float:left;">
+                                    <li class="text active"><a>不限</a></li>
+                                    <li class="text"><a data="1">难</a></li>
+                                    <li class="text"><a data="2">中</a></li>
+                                    <li class="text"><a data="3">易</a></li>
+                                </ul>
+                            </div>
+                        </c:if>
+                        <%--年份--%>
+                        <c:if test="${searchType == '试卷'}">
+
+                            <div style="float: left;border:0px;border-bottom: solid #a489da 1px;width:100%;">
+                                <span class="sec-item" style="margin-left: 10px;font-weight: bolder;clear: both;font-size: 11pt;min-width: 66px;margin-bottom: 10px;height:21px;;line-height:21px;;float:left">年份：</span>
+                                <ul id="conditionYear" class="sec-item" style="margin-left: -30px;margin-right: -30px;float:left;">
+                                    <%request.setAttribute("currentYear", Calendar.getInstance().get(Calendar.YEAR));%>
+                                    <li class="text active"><a>不限</a></li>
+                                    <c:forEach var="item" items="${conditionYears}">
+                                        <li class="text"><a data="${item}">${item}</a></li>
+                                    </c:forEach>
+                                        <%--<li class="text"><a data="2015">2015</a></li>--%>
+                                        <%--<li class="text"><a data="2014">2014</a></li>--%>
+                                        <%--<li class="text"><a data="2013">2013</a></li>--%>
+                                        <%--<li class="text"><a data="2012">2012</a></li>--%>
+                                        <%--<li class="text"><a data="2011">2011</a></li>--%>
+                                    <li class="text"><a data="-1">更早以前</a></li>
+                                </ul>
+                            </div>
+                        </c:if>
+                        <%--地区--%>
+                        <c:if test="${searchType == '试卷' || searchType == '小升初' || searchType == '中考' || searchType == '高考'}">
+
+                            <div style="float: left;border:0px;border-bottom: solid #a489da 1px;width:100%;">
+                                <span id="conditionAreaPrev" class="sec-item" style="margin-left: 10px;font-weight: bolder;clear: both;font-size: 11pt;min-width: 66px;margin-bottom: 10px;height:21px;;line-height:21px;;float:left">地区：</span>
+                                <ul id="conditionArea" class="sec-item" style="margin-left: -30px;margin-right: -30px;width:97%;float: left">
+                                    <li class="text active"><a>不限</a></li>
+                                    <li class="text"><a data="4419">东莞</a></li>
+                                    <li class="text"><a data="4406">佛山</a></li>
+                                    <li class="text"><a data="4499">顺德</a></li>
+                                    <li class="text"><a data="4413">惠州</a></li>
+                                    <li class="text"><a data="4420">中山</a></li>
+                                    <li class="text"><a data="4407">江门</a></li>
+                                    <li class="text"><a data="4404">珠海</a></li>
+                                    <li class="text"><a data="5301">昆明</a></li>
+                                    <li class="text"><a data="3601">南昌</a></li>
+                                    <li class="text"><a data="3401">合肥</a></li>
+                                    <li class="text"><a data="3702">青岛</a></li>
+                                    <li class="text"><a data="3310">台州</a></li>
+                                    <li class="text"><a data="3301">杭州</a></li>
+                                    <li class="text"><a data="3205">苏州</a></li>
+                                    <li class="text"><a data="3202">无锡</a></li>
+                                    <li class="text"><a data="3204">常州</a></li>
+                                    <li class="text"><a data="3210">扬州</a></li>
+                                    <li class="text"><a data="4408">湛江</a></li>
+                                </ul>
+                            </div>
+                        </c:if>
+                    </div>
+                    <div class="row" id="conditionSortRow">
+                        <ul id="conditionSort" class="sec-item sec-sort"
+                            style="border-top: 1px #a489da solid;;border-bottom: 1px #a489da solid;;border-left:none;border-right:none;">
+                            <li class="title">排序：</li>
+                            <li class="text active">
+                                <a data="downloadCount" style="" hidefocus="true" alog-text="下载量" href="javascript:void(0)">下载量 </a>
+                            </li>
+                            <li class="text">
+                                <a data="createTime" style="" hidefocus="true" alog-text="最新" href="javascript:void(0)">最新</a>
+                            </li>
+                            <li class="text">
+                                <a data="rank" style="" hidefocus="true" alog-text="好评" href="javascript:void(0)">好评</a>
+                            </li>
+                            <c:if test="${searchType != '小升初' && searchType != '中考' && searchType != '高考'}">
+                                <li class="text">
+                                    <a data="pageCount" style="" hidefocus="true" alog-text="页数" href="javascript:void(0)">页数</a>
+                                </li>
+                            </c:if>
+                        </ul>
+                        <div>
+                            <div id="listDataArea" class="document-list ul-no-style list-group">
+                                <%--列表内容区域--%>
+                            </div>
+                        </div>
+                    </div>
+                </div>
+            </div>
+        </div>
+    </div>
+</div>
+<script src='${ctx}/thirdpart/ztree/jquery.ztree.all-3.5.min.js'></script>
+<script src='${ctx}/thirdpart/jqselectable/js/jQselectable.js'></script>
+<script src='${ctx}/thirdpart/jPaginate/jquery.paginate.js'></script>
+
+<script src="${ctx}/static/js/component/datagrid.js"></script>
+
+<script>
+    var searchType = '${searchType}';
+    var isEnterHighSchool = searchType == '小升初' || searchType == '中考' || searchType == '高考';
+    var userInformation = {
+        subject : getCookie('search_subject') ?  getCookie('search_subject') : ${userInformation.subject},
+        teachingVersion : getCookie('search_teachingVersion') ?  getCookie('search_teachingVersion') : ${userInformation.teachingVersion},
+        grade : getCookie('search_grade') ?  getCookie('search_grade') : ${userInformation.grade}
+    }
+</script>
+<script src='${ctx}/static/js/document/search.js'></script>
+
+<%@include file="../footer.jsp" %>
+</body>
+</html>

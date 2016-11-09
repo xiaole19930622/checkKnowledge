@@ -1,0 +1,85 @@
+ /**
+     * 资源状态   1-100
+     */
+    RESOURCE_NOT_SUBMIT(1,"资源未提交"),
+    RESOURCE_SUBMIT(2,"资源已提交"),
+    RESOURCE_WRONG(3,"资源错误退回"),
+    RESOURCE_INVALID(4,"资源失效"),
+    RESOURCE_REPEAT(5,"资源重复"),
+    /**
+     * 题干制作   101-200
+     */
+    QUESTION_CONTENT_NOT_GET(101,"题干制作未获取"),
+    QUESTION_CONTENT_NOT_SUBMIT(102,"题干制作未提交"),
+    QUESTION_CONTENT_SUBMIT(103,"题干已提交"),
+    QUESTION_CONTENT_TIMEOUT(104,"题干制作超时"),
+    QUESTION_CONTENT_WRONG(105,"题干错误"),//一审、二审内容退回来
+    QUESTION_CONTENT_REPEAT_MAKE(106,"题干重新制作"),//题干制作->任务上存->题干制作
+    QUESTION_CONTENT_INFO_WRONG(107,"题干制作信息错误"),
+    RESOURCE_MAKE_EXTENSION(108,"题干制作延期"),
+
+    /**
+     * 题干一审  201-300
+     */
+    FIRST_CONTENT_REVIEWER_NOT_GET(201,"题干一审未获取"),//
+    FIRST_CONTENT_REVIEWER_NOT_SUBMIT(202,"题干一审未提交"),//
+    FIRST_CONTENT_REVIEWER_PASS(203,"题干一审通过"),//内容通过
+    FIRST_CONTENT_REVIEWER_TIMEOUT(204,"题干一审超时回收"),//
+    FIRST_INFO_REVIEWER_WRONG(205,"题干一审信息错误"),//图片、信息错误FIRST_CONTENT_REVIEWER_WRONG
+    FIRST_CONTENT_REVIEWER_NOT_PASS(206,"题干一审不通过"),//内容不通过
+    FIRST_CONTENT_REPEAT_REVIEWER(207,"题干一审重审"),//一审错误退回，题干制作者做好之后，重新审核
+
+    /**
+     * 题干二审  301-400
+     */
+    SECOND_CONTENT_REVIEWER_NOT_GET(301,"题干二审未获取"),
+    SECOND_CONTENT_REVIEWER_NOT_SUBMIT(302,"题干二审未提交"),
+    SECOND_CONTENT_REVIEWER_PASS(303,"题干二审已通过"),
+    SECOND_CONTENT_REVIEWER_TIMEOUT(304,"题干二审超时回收"),
+    SECOND_INFO_REVIEWER_WRONG(305,"题干二审信息错误"),
+    SECOND_CONTENT_REPEAT_REVIEWER(306,"题干二审重审"),
+    SECOND_CONTENT_REVIEWER_NOT_PASS(307,"题干二审不通过"),
+    SECOND_CONTENT_REVIEWER_WRONG(308,"题干二审错误"),//二审说一审不负责任，审的有问题
+
+    /**
+     * 解析制作  401-500
+     */
+    EXPLAIN_MAKE_NOT_GET(401,"解析制作未获取"),
+    EXPLAIN_MAKE_NOT_SUBMIT(402,"解析制作未提交"),
+    EXPLAIN_MAKE_SUBMIT(403,"解析制作已提交"),
+    EXPLAIN_MAKE_TROUBLE(404,"解析制作困难"),
+    EXPLAIN_MAKE_TIMEOUT(405,"解析制作超时回收"),
+    EXPLAIN_MAKE_DELAY(406,"解析制作延期"),
+    EXPLAIN_WRONG(407,"解析错误"),
+
+    /**
+     * 解析一审  501-600
+     *
+     */
+    EXPLAIN_FIRST_REVIEWER_NOT_GET(501,"解析一审未获取"),
+    EXPLAIN_FIRST_REVIEWER_NOT_SUBMIT(502,"解析一审未提交"),
+    EXPLAIN_FIRST_REVIEWER_TIMEOUT(503,"解析一审超时"),
+    EXPLAIN_FIRST_REVIEWER_SUBMIT(504,"解析一审已提交"),
+    EXPLAIN_FIRST_REVIEWER_NOT_PASS(505,"解析一审不通过"),
+    EXPLAIN_FIRST_REPEAT_REVIEWER(506,"解析一审重审"),
+    EXPLAIN_FIRST_REVIEWER_PASS(507,"解析一审通过"),
+    EXPLAIN_FIRST_REVIEWER_DELAY(508,"解析一审延期"),
+
+    /**
+     * 解析二审 601-700
+     */
+    EXPLAIN_SECOND_REVIEWER_NOT_GET(601,"解析二审未获取"),
+    EXPLAIN_SECOND_REVIEWER_NOT_SUBMIT(602,"解析二审未提交"),
+    EXPLAIN_SECOND_REVIEWER_TIMEOUT(603,"解析二审超时"),
+    EXPLAIN_SECOND_REVIEWER_NOT_PASS(604,"解析二审不通过"),
+    EXPLAIN_SECOND_REPEAT_REVIEWER(605,"解析二审重审"),
+    EXPLAIN_SECOND_REVIEWER_DELAY(606,"解析二审延期"),
+    EXPLAIN_SECOND_REVIEWER_SUBMIT(607,"解析二审已提交"),
+
+    /**
+     * 入库 2000
+     */
+    STORAGE(2000,"入库"),
+
+
+
