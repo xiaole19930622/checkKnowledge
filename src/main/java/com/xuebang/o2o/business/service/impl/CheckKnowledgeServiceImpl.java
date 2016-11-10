@@ -66,7 +66,7 @@ public class CheckKnowledgeServiceImpl implements CheckKnowledgeService {
         for (int i = 0; i < wb.getNumberOfSheets(); i++) {
             boolean tempResult = true;
             if (i == 0) {
-                if (wb.getSheetAt(i).getSheetName().indexOf("专题") > 0) {
+                if (wb.getSheetAt(i).getSheetName().indexOf("专题") > -1) {
                     //专题知识点的处理
                     tempResult =  knowledgeCheck(wb.getSheetAt(i), style ,allKnows);
                 }else {
@@ -155,7 +155,7 @@ public class CheckKnowledgeServiceImpl implements CheckKnowledgeService {
         }
 
         allKnows.put( "knows" , knowledges );
-        knowledgeDao.save( knowledges );
+//        knowledgeDao.save( knowledges );
         return   checkRresult ;
     }
 
@@ -206,6 +206,11 @@ public class CheckKnowledgeServiceImpl implements CheckKnowledgeService {
             String cellValue = cellValue( row , j );
             if ( ! StringUtils.isBlank( cellValue)) {/**列数据不为空*/
                 flagNumer = j ;
+                if ( cellValue.indexOf( "<split-tag>" ) > -1) {//剔除<split-tag>
+                    cellValue = cellValue.replace("<split-tag>","");
+                }
+                isLeaf(knowBaseInfo, knowledge, j);
+
                 knowledge.setName( cellValue );
                 Integer parentKey = j - 1;
                 /**取出父级知识点*/
@@ -219,7 +224,24 @@ public class CheckKnowledgeServiceImpl implements CheckKnowledgeService {
     }
 
     /**
-     *  获取知识点序号    因为序号有可能为 数字 类型 所有要做判断
+     * 判断专题知识点中，当前知识点是否是叶子节点
+     * @param knowBaseInfo
+     * @param knowledge
+     * @param j
+     */
+    private void isLeaf(KnowBaseInfo knowBaseInfo, Knowledge knowledge, int j) {
+        //判断是否是叶子节点
+        // 当column +　1  不是知识点名字的列时，当前知识点就是叶子节点
+        if( !knowBaseInfo.getNameColPostion().contains(j+1) ){
+            knowledge.setIsLeaf( 1 );
+        }else{
+            knowledge.setIsLeaf( 0 );
+        }
+    }
+
+    /**
+     *  获取知识点序号
+     *  获取 某行某列的值   因为序号有可能为 数字 类型 所有要做判断
       * @param row  行
      * @param j   列index
      * @return
@@ -372,7 +394,9 @@ public class CheckKnowledgeServiceImpl implements CheckKnowledgeService {
         }
     }
 
-            /**==================================================华丽的分割线===================================================================*/
+            /**==================================================以上是专题知识点===================================================================*/
+            /**====================================================华丽的分割线=====================================================================*/
+            /**==================================================以下是同步知识点===================================================================*/
     private Boolean syncKnowledgeCheck(Sheet sheet) {
 
         return null;
@@ -395,6 +419,10 @@ public class CheckKnowledgeServiceImpl implements CheckKnowledgeService {
         String filePathSuffix = filePath.substring(filePath.lastIndexOf(".") );
 
         System.out.println( filePathPrefix +"----------> "+ filePathSuffix);
+
+        String val = "<split-tag>1.1 集合";
+        System.out.println( val.indexOf( "<split-tag>") > -1);
+        System.out.println( val.replace( "<split-tag>" ,""));
     }
 
     private static void initaa(KnowBaseInfo knowBaseInfo, int a ,Boolean checkResult) {
