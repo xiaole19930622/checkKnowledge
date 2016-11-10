@@ -1,6 +1,8 @@
 package com.xuebang.o2o.business.entity;
 
+import java.util.ArrayList;
 import java.util.HashMap;
+import java.util.List;
 import java.util.Map;
 
 /**
@@ -23,6 +25,8 @@ public class KnowBaseInfo {
     //列的位置   2  同步知识点对象
     private Map<Integer , Knowledge> position2Objec = new HashMap<>();
 
+    // 存储 知识点名字的列的位置
+    private List<Integer> nameColPostion = new ArrayList<>();
 
     public Integer getSection() {
         return section;
@@ -62,5 +66,24 @@ public class KnowBaseInfo {
 
     public void setKnowledgeNumber(Integer knowledgeNumber) {
         this.knowledgeNumber = knowledgeNumber;
+    }
+
+    public List<Integer> getNameColPostion() {
+        return nameColPostion;
+    }
+
+    public void setNameColPostion(List<Integer> nameColPostion) {
+        this.nameColPostion = nameColPostion;
+    }
+
+    @Override
+    public String toString() {
+        return "KnowBaseInfo{" +
+                "section=" + section +
+                ", subject=" + subject +
+                ", knowledgeNumber=" + knowledgeNumber +
+                ", name2position=" + name2position +
+                ", position2Objec=" + position2Objec +
+                '}';
     }
 }

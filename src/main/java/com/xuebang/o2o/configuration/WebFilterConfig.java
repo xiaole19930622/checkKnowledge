@@ -51,14 +51,14 @@ public class WebFilterConfig {
         filterMap.put("authc", new SubFormAuthenticationFilter());
         shiroFilterFactoryBean.setFilters(filterMap);
 //        filterChainDefinitionMap.put("/shiro-cas", "casFilter");
-        filterChainDefinitionMap.put("/thirdpart/**", "anon");
-        filterChainDefinitionMap.put("/static/**", "anon");
-        filterChainDefinitionMap.put("/user/login", "anon");
-        filterChainDefinitionMap.put("/**/favicon.ico", "anon");
-        filterChainDefinitionMap.put("/webjars/**", "anon");
-        filterChainDefinitionMap.put("/spiderInterface/**", "anon");
-        filterChainDefinitionMap.put("/mobileInterface/**", "anon");
-        filterChainDefinitionMap.put("/**", "authc");
+//        filterChainDefinitionMap.put("/thirdpart/**", "anon");
+//        filterChainDefinitionMap.put("/static/**", "anon");
+//        filterChainDefinitionMap.put("/user/login", "anon");
+//        filterChainDefinitionMap.put("/**/favicon.ico", "anon");
+//        filterChainDefinitionMap.put("/webjars/**", "anon");
+//        filterChainDefinitionMap.put("/spiderInterface/**", "anon");
+//        filterChainDefinitionMap.put("/mobileInterface/**", "anon");
+//        filterChainDefinitionMap.put("/**", "anon");
         shiroFilterFactoryBean
                 .setFilterChainDefinitionMap(filterChainDefinitionMap);
         return shiroFilterFactoryBean;
