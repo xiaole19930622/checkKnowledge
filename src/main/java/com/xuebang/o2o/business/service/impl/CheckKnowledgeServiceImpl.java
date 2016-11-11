@@ -3,6 +3,8 @@ package com.xuebang.o2o.business.service.impl;
 import com.xuebang.o2o.business.dao.KnowledgeDao;
 import com.xuebang.o2o.business.entity.KnowBaseInfo;
 import com.xuebang.o2o.business.entity.Knowledge;
+import com.xuebang.o2o.business.entity.SyncKnowBaseInfo;
+import com.xuebang.o2o.business.entity.SysnKnowledge;
 import com.xuebang.o2o.business.service.CheckKnowledgeService;
 import org.apache.commons.lang3.StringUtils;
 import org.apache.poi.hssf.usermodel.HSSFCell;
@@ -27,12 +29,8 @@ import java.util.Map;
 @Service
 @Transactional
 public class CheckKnowledgeServiceImpl implements CheckKnowledgeService {
-    /**
-     * 专题知识点的list
-     */
-    private List<Knowledge> knowledges = new ArrayList<>();
 
-
+    CellStyle styleYellow = null;
     @Autowired
     private KnowledgeDao knowledgeDao;
 
@@ -55,6 +53,9 @@ public class CheckKnowledgeServiceImpl implements CheckKnowledgeService {
         style.setFillPattern(HSSFCellStyle.SOLID_FOREGROUND);
         style.setFillForegroundColor(HSSFColor.RED.index);
 
+        styleYellow = wb.createCellStyle();
+        styleYellow.setFillPattern(HSSFCellStyle.SOLID_FOREGROUND);
+        styleYellow.setFillForegroundColor(HSSFColor.YELLOW.index);
 
         /** 检查结果*/
         Boolean checkRresult = true;
@@ -75,7 +76,7 @@ public class CheckKnowledgeServiceImpl implements CheckKnowledgeService {
 
             } else {
                 //同步知识点的处理
-//                tempResult =  syncKnowledgeCheck(wb.getSheetAt(i));
+                tempResult =  syncKnowledgeCheck(wb.getSheetAt(i) , style , allKnows );
             }
 
 
@@ -128,6 +129,12 @@ public class CheckKnowledgeServiceImpl implements CheckKnowledgeService {
         /** 检查知识点*/
         for (int i = 1; i < sheet.getLastRowNum() + 1; i++) {
             Row row = sheet.getRow(i) ;
+            boolean knowNameCellTotalNull = isNnowNameCellTotalNull(knowBaseInfo.getNameColPostion(), row);
+            if( knowNameCellTotalNull ){
+                continue;
+            }
+
+
             //添加check规则
             boolean tempResult = true;
             tempResult =  knowNameCount(style, knowBaseInfo, row);
@@ -141,6 +148,12 @@ public class CheckKnowledgeServiceImpl implements CheckKnowledgeService {
         /**导入知识点*/
         for (int i = 1; i < sheet.getLastRowNum() + 1; i++) {
             Row row = sheet.getRow(i);
+            boolean knowNameCellTotalNull = isNnowNameCellTotalNull(knowBaseInfo.getNameColPostion(), row);
+            if( knowNameCellTotalNull ){
+                continue;
+            }
+
+
             int flagNumer = 0;
             Knowledge knowledge = new Knowledge();
             for (int j = 0; j < (int) row.getLastCellNum() + 1; j++) {
@@ -175,7 +188,8 @@ public class CheckKnowledgeServiceImpl implements CheckKnowledgeService {
             if(! StringUtils.isBlank( value)){
                 flag ++;
                 if ( flag > 1 ){
-                    row.getCell(colPos).setCellStyle( style );
+//                    row.getCell(colPos).setCellStyle( style );
+                    bgColorRedCell(style, colPos , row);
                     checkRresult = false;
                     System.out.println( " 行row = " + row.getRowNum() + " 有多个知识点，请检查!" );
                 }
@@ -197,7 +211,10 @@ public class CheckKnowledgeServiceImpl implements CheckKnowledgeService {
     private int registerKnowledge(Sheet sheet, KnowBaseInfo knowBaseInfo, Row row, int flagNumer, Knowledge knowledge, int j) {
         /** 列号 == 专题知识点序号*/
         if (j == knowBaseInfo.getKnowledgeNumber()) {
-            knowledge.setNumber(cellValue(row, j)) ;
+            String xuhao = cellValue(row, j);
+            knowledge.setNumber( xuhao) ;
+            //设置排序
+            knowledge.setSort( subStringXuhao( xuhao ) );
         } else if (j == knowBaseInfo.getSection()) { /**列号  == 学段*/
             knowledge.setSection( cellValue( row , j ));
         } else if (j == knowBaseInfo.getSubject()) {/**列号 == 学科*/
@@ -209,7 +226,20 @@ public class CheckKnowledgeServiceImpl implements CheckKnowledgeService {
                 if ( cellValue.indexOf( "<split-tag>" ) > -1) {//剔除<split-tag>
                     cellValue = cellValue.replace("<split-tag>","");
                 }
-                isLeaf(knowBaseInfo, knowledge, j);
+
+                /** 保证行的知识点不全为空  start*/
+                int nextRowIndex = row.getRowNum() + 1;
+                Row nextRow = sheet.getRow( nextRowIndex );
+                while ( isNnowNameCellTotalNull(knowBaseInfo.getNameColPostion() , nextRow )){
+                    nextRowIndex ++;
+                    nextRow = sheet.getRow( nextRowIndex );
+                    if ( nextRow == null ){
+                        break;
+                    }
+                }
+                /** 保证行的知识点不全为空  end*/
+                //设置是否为叶子节点
+                isLeaf(knowBaseInfo, knowledge, j , sheet.getRow( nextRowIndex ) ,row);
 
                 knowledge.setName( cellValue );
                 Integer parentKey = j - 1;
@@ -223,16 +253,35 @@ public class CheckKnowledgeServiceImpl implements CheckKnowledgeService {
         return flagNumer;
     }
 
+    private Integer subStringXuhao( String s) {
+        String xuhao = s;// 例 ： 1.1.1.4 元素与集合的关系, 获取 尾数4
+        String val = xuhao.substring(xuhao.lastIndexOf(".")+1);
+        try {
+            Integer result =  Integer.valueOf( val );
+            return result ;
+        } catch (NumberFormatException e) {
+//            e.printStackTrace();
+        }
+        return null;
+    }
+
     /**
      * 判断专题知识点中，当前知识点是否是叶子节点
      * @param knowBaseInfo
      * @param knowledge
      * @param j
      */
-    private void isLeaf(KnowBaseInfo knowBaseInfo, Knowledge knowledge, int j) {
+    private void isLeaf(KnowBaseInfo knowBaseInfo, Knowledge knowledge, int j ,Row nextRow ,Row row) {
         //判断是否是叶子节点
-        // 当column +　1  不是知识点名字的列时，当前知识点就是叶子节点
-        if( !knowBaseInfo.getNameColPostion().contains(j+1) ){
+        // 当column +　1  不是知识点名字的列时 || 下一行的当前列不为null，当前知识点就是叶子节点    前提： 下一列的所有知识点的名称都不为空
+        boolean nextRowCellIsNotNull = nextRowCellIsNotNull( knowBaseInfo.getNameColPostion() , nextRow , j );
+
+        //if nextRow > 最后一行 则, nextRowCellIsNotNull = true;
+        if( row.getSheet().getLastRowNum() ==  row.getRowNum()){
+            nextRowCellIsNotNull = true ;
+        }
+
+        if( !knowBaseInfo.getNameColPostion().contains(j+1) ||  nextRowCellIsNotNull ){
             knowledge.setIsLeaf( 1 );
         }else{
             knowledge.setIsLeaf( 0 );
@@ -397,9 +446,465 @@ public class CheckKnowledgeServiceImpl implements CheckKnowledgeService {
             /**==================================================以上是专题知识点===================================================================*/
             /**====================================================华丽的分割线=====================================================================*/
             /**==================================================以下是同步知识点===================================================================*/
-    private Boolean syncKnowledgeCheck(Sheet sheet) {
+    private Boolean syncKnowledgeCheck(Sheet sheet ,CellStyle style , Map<String , List >  allKnows) {
+        SyncKnowBaseInfo syncKnowBaseInfo = initSyncKnowBaseInfoParam(sheet, style);
 
-        return null;
+        System.out.println("同步知识点 《列号》 数据注册成功 ------->" + syncKnowBaseInfo.toString());
+
+        List<SysnKnowledge> sysnKnowledges = new ArrayList<>() ;
+
+        //检查结果
+        Boolean checkRresult = true;
+
+        /** 检查知识点*/
+        for (int i = 1; i < sheet.getLastRowNum() + 1; i++) {
+            Row row = sheet.getRow(i) ;
+
+            boolean knowNameCellTotalNull = isNnowNameCellTotalNull(syncKnowBaseInfo.getNameColPostion(), row);
+            if( knowNameCellTotalNull ){
+                continue;
+            }
+
+            //添加check规则
+            /** 规则一  start*/
+            boolean tempResult = true;
+            Map<String , Object>  result =   syncknowNameCount(style, syncKnowBaseInfo, row);
+            tempResult = (Boolean) result.get( "checkRresult");
+            if( checkRresult ){
+                checkRresult = tempResult;
+            }
+            /** 规则一  end*/
+
+            /** 规则二 start*/
+            int nextRowIndex = i+1;
+            Row nextRow = sheet.getRow( nextRowIndex );
+            while ( isNnowNameCellTotalNull(syncKnowBaseInfo.getNameColPostion() , nextRow )){
+                nextRowIndex ++;
+                nextRow = sheet.getRow( nextRowIndex );
+                if ( nextRow == null ){
+                    break;
+                }
+            }
+            tempResult = checkKnowledgeNumberAndName( style , syncKnowBaseInfo , row ,nextRow, allKnows , (Integer)result.get( "syncKnowNamePosition") );
+            if( checkRresult ){
+                checkRresult = tempResult;
+            }
+            /** 规则二 end*/
+
+        }
+
+
+        /**导入知识点*/
+        for (int i = 1; i < sheet.getLastRowNum() + 1; i++) {
+            Row row = sheet.getRow(i);
+            boolean knowNameCellTotalNull = isNnowNameCellTotalNull(syncKnowBaseInfo.getNameColPostion(), row);
+            if( knowNameCellTotalNull ){
+                continue;
+            }
+
+            int flagNumer = 0;
+            SysnKnowledge sysnKnowledge = new SysnKnowledge();
+            for (int j = 0; j < (int) row.getLastCellNum() + 1; j++) {
+                flagNumer = registerSyncKnowledge(sheet, syncKnowBaseInfo, row, flagNumer, sysnKnowledge, j ,allKnows);
+//                registerKnowledge();
+            }
+            if( flagNumer != 0 ){
+                syncKnowBaseInfo.getPosition2Objec().put( flagNumer , sysnKnowledge);
+            }else {
+                System.out.println( "行位置为 "+ i+1 + "，出现错误，请检查 ");
+            }
+            sysnKnowledges.add( sysnKnowledge );
+        }
+
+        allKnows.put( "syncknows" + sheet.getWorkbook().getNameIndex( sheet.getSheetName()) , sysnKnowledges );
+
+
+        return checkRresult;
+    }
+
+    private int registerSyncKnowledge(Sheet sheet, SyncKnowBaseInfo syncKnowBaseInfo, Row row, int flagNumer, SysnKnowledge sysnKnowledge, int j ,Map<String , List >  allKnows) {
+        /** 列号 == 专题知识点序号*/
+        if (j == syncKnowBaseInfo.getKnowledgeNumber()) {
+            sysnKnowledge.setKnowNumber(cellValue(row, j));
+        }else if (j == syncKnowBaseInfo.getKnowName()) {/**列号 == 专题知识点名称*/
+            if( ! StringUtils.isBlank( cellValue( row , j) )){
+                sysnKnowledge.setKnowName( cellValue( row , j).replace("<split-tag>","") );
+            }
+        } else if (j == syncKnowBaseInfo.getSection()) { /**列号  == 学段*/
+            sysnKnowledge.setSection( cellValue( row , j ));
+        } else if (j == syncKnowBaseInfo.getSubject()) {/**列号 == 学科*/
+            sysnKnowledge.setSubject( cellValue( row , j) );
+        } else if (j == syncKnowBaseInfo.getBookVersion()) {/**列号 == 书本*/
+            sysnKnowledge.setBookVersion( cellValue( row , j) );
+        }else if (j == syncKnowBaseInfo.getPublishVersion()) {/**列号 == 教材版本*/
+            sysnKnowledge.setPublishVersion( cellValue( row , j) );
+        }else if ( syncKnowBaseInfo.getName2position().containsKey(columnHeadValue( j, sheet)) ) {/**列号 == 知识点名称的列号*/
+            String cellValue = cellValue( row , j );
+            if ( ! StringUtils.isBlank( cellValue)) {/**列数据不为空*/
+                flagNumer = j ;
+                if ( cellValue.indexOf( "<split-tag>" ) > -1) {//剔除<split-tag>
+                    cellValue = cellValue.replace("<split-tag>","");
+                }
+
+                /** 保证行的知识点不全为空  start*/
+                int nextRowIndex = row.getRowNum() + 1;
+                Row nextRow = sheet.getRow( nextRowIndex );
+                while ( isNnowNameCellTotalNull(syncKnowBaseInfo.getNameColPostion() , nextRow )){
+                    nextRowIndex ++;
+                    nextRow = sheet.getRow( nextRowIndex );
+                    if ( nextRow == null ){
+                        break;
+                    }
+                }
+                /** 保证行的知识点不全为空  end*/
+                //设置是否为叶子节点
+                isSyncLeaf(syncKnowBaseInfo, sysnKnowledge, j , nextRow , row);
+
+                //设置排序
+                sysnKnowledge.setSort( subStringXuhao(cellValue.split(" ")[0]) );
+
+                String[] cellValArray = cellValue.split(" ");
+                sysnKnowledge.setNumber( cellValArray[0] );
+                sysnKnowledge.setName( cellValArray[1]  );
+                Integer parentKey = j - 1;
+                /**取出父级知识点*/
+                if ( syncKnowBaseInfo.getPosition2Objec().containsKey( parentKey ) ){
+                    sysnKnowledge.setParent(  syncKnowBaseInfo.getPosition2Objec().get( parentKey) );
+                }
+            }
+
+        }
+        List< Knowledge> knows = allKnows.get("knows");
+
+        registerSyncKnowToKnow(sysnKnowledge, knows);
+
+        return flagNumer;
+    }
+
+    /**
+     * 映射同步知识点 --->  专题知识点
+     * @param sysnKnowledge
+     * @param knows
+     */
+    private void registerSyncKnowToKnow(SysnKnowledge sysnKnowledge, List<Knowledge> knows) {
+        if( !StringUtils.isBlank( sysnKnowledge.getKnowNumber())  &&  !StringUtils.isBlank( sysnKnowledge.getKnowName() ) ){
+            for ( Knowledge know : knows ){
+                Knowledge parent = know.getParent();
+                if ( parent == null ) {
+                    continue;
+                }
+                if( sysnKnowledge.getKnowNumber().equals( parent.getName() ) && sysnKnowledge.getKnowName().equals( parent.getNumber())){
+                    sysnKnowledge.setKnowledge( know );
+                    break;
+                }
+            }
+        }
+    }
+
+    /**
+     * 是否是叶子节点
+     * @param syncKnowBaseInfo
+     * @param sysnKnowledge
+     * @param j
+     * @param nextRow
+     */
+    private void isSyncLeaf(SyncKnowBaseInfo syncKnowBaseInfo, SysnKnowledge sysnKnowledge, int j, Row nextRow ,Row row ) {
+        //判断是否是叶子节点
+        // 当column +　1  不是知识点名字的列时 || 下一行的当前列之前的所有知识点名称的有一个不为null，当前知识点就是叶子节点    前提： 下一列的所有知识点的名称都不为空
+        boolean nextRowCellIsNotNull = nextRowCellIsNotNull( syncKnowBaseInfo.getNameColPostion() , nextRow , j );
+
+        //if nextRow > 最后一行 则, nextRowCellIsNotNull = true;
+        if( row.getSheet().getLastRowNum() == row.getRowNum() ){
+            nextRowCellIsNotNull = true ;
+        }
+
+        if( !syncKnowBaseInfo.getNameColPostion().contains(j+1) ||  nextRowCellIsNotNull ){
+            sysnKnowledge.setIsLeaf( 1 );
+        }else{
+            sysnKnowledge.setIsLeaf( 0 );
+        }
+
+    }
+
+    /**
+     * 判断知识点名称所在的列是否全部是null
+     * @param nameColPostion
+     * @param row
+     * @return
+     */
+    private boolean isNnowNameCellTotalNull(List <Integer> nameColPostion, Row row) {
+//        if ( row == null ) {
+//            return false;
+//        }
+        boolean knowNameCellTotalNull = true;
+        for (Integer colPos : nameColPostion){
+            String value =  cellValue( row , colPos );
+            if ( !StringUtils.isBlank( value) ){
+               return   false;
+            }
+        }
+        return  true;
+    }
+
+    /**
+     * 同步知识点check 规则二 ： 如果存在专题知识点则检查本知识点和专题知识点是否都是叶子节点
+     * @param style     错误的样式
+     * @param syncKnowBaseInfo   同步知识点映射
+     * @param row             当前row
+     * @param nextRow         下一行的row
+     * @param allKnows         所有对象的map
+     * @param syncKnowNamePosition    当前行的知识点名称的列的位置
+     * @return
+     */
+    private boolean checkKnowledgeNumberAndName(CellStyle style, SyncKnowBaseInfo syncKnowBaseInfo, Row row ,Row nextRow,Map<String , List >  allKnows , Integer syncKnowNamePosition) {
+       // 1. 如果专题知识点名称和序号都为null，返回true
+        String knowNumber =  cellValue( row ,syncKnowBaseInfo.getKnowledgeNumber() );
+        String knowName = cellValue( row , syncKnowBaseInfo.getKnowName() );
+        if( StringUtils.isBlank( knowNumber ) && StringUtils.isBlank( knowName) ){
+            return true;
+        }
+
+        // 2. 如果专题知识点序号 和  名称只有其中一个为空，则返回false
+        if( StringUtils.isBlank( knowNumber ) && !StringUtils.isBlank( knowName) ){
+            bgColorRedCell(style, syncKnowBaseInfo.getKnowName(), row);
+            return false;
+        }
+        if( !StringUtils.isBlank( knowNumber ) && StringUtils.isBlank( knowName) ){
+            bgColorRedCell(style, syncKnowBaseInfo.getKnowName(), row);
+            return false;
+        }
+
+        // 3. （ 当前列为叶子节点【下一行的此列之前的所有知识点列有一个不为null || 当前列列位置+1不是知识点名称】 ） && 专题知识点名称和序号也是叶子节点，return true； 此处有一个前提：保证下一行不是整个知识点名字的列都为 null
+        List< Knowledge > knows = allKnows.get( "knows" );
+        boolean isKnowLeaf =   isKnowLeaf(knowNumber, knowName, knows);
+        if(  "<split-tag>增长率问题".equals( knowName )){
+            System.out.println(1);
+        }
+        boolean nextRowCellIsNotNull = nextRowCellIsNotNull(syncKnowBaseInfo.getNameColPostion(), nextRow, syncKnowNamePosition);
+
+        //  if row 是最后一行  nextRowCellIsNotNull = true
+        if ( row.getSheet().getLastRowNum() == row.getRowNum()  ){
+            nextRowCellIsNotNull = true;
+        }
+
+        if(  (nextRowCellIsNotNull ||  ( ! syncKnowBaseInfo.getNameColPostion().contains( syncKnowNamePosition + 1 )) ) && isKnowLeaf){
+            return  true ;
+        }else{
+            bgColorRedCell(style, syncKnowBaseInfo.getKnowName(), row);
+            bgColorRedCell(style, syncKnowBaseInfo.getKnowledgeNumber(), row);
+            return  false;
+        }
+
+    }
+
+    /***
+     * 下一行的此列之前的所有知识点列有一个不为null
+     * @param nameColPostion            所有知识点列的  列号
+     * @param nextRow                   下一行
+     * @param syncKnowNamePosition      当前列
+     * @return
+     */
+    private Boolean nextRowCellIsNotNull(List<Integer> nameColPostion, Row nextRow, Integer syncKnowNamePosition) {
+        String nextRowNextCell =  null ;
+        Integer cellIndex =  nameColPostion.indexOf( syncKnowNamePosition );
+        for( int h = 0 ; h < cellIndex + 1 ; h++ ){
+            nextRowNextCell = cellValue( nextRow , nameColPostion.get( h ) );
+            if ( !StringUtils.isBlank( nextRowNextCell )){
+                return  true;
+            }
+        }
+        return false;
+    }
+
+    private void bgColorRedCell(CellStyle style, Integer cellIndex , Row row) {
+        try {
+            row.getCell( cellIndex).setCellStyle( style);
+        } catch (Exception e) {
+            row.createCell(  cellIndex ).setCellStyle( style );
+        }
+    }
+
+    /**
+     * 确认专题知识点是否是叶子节点
+     * @param knowNumber
+     * @param knowName
+     * @param knows
+     * @return
+     */
+    private boolean isKnowLeaf(String knowNumber, String knowName, List<Knowledge> knows) {
+        for ( Knowledge know : knows ){
+            Knowledge parent = know.getParent();
+            if ( parent == null ) {
+                continue;
+            }
+            if( knowNumber.equals( parent.getName() ) && knowName.equals( parent.getNumber())){
+                return false;
+            }
+        }
+        return  true;
+    }
+
+    /**
+     * 同步知识点check 规则一 ： 同一行不能有两个知识点名称
+     * @param style
+     * @param syncKnowBaseInfo
+     * @param row
+     * @return
+     */
+    private Map<String , Object> syncknowNameCount(CellStyle style, SyncKnowBaseInfo syncKnowBaseInfo, Row row) {
+        Map<String , Object > result = new HashMap<>();
+
+        Boolean checkRresult = true;
+        int flag = 0;
+        Integer syncKnowNamePosition = 0;//知识点名称的列位置   规则二需要用到
+        for (Integer colPos : syncKnowBaseInfo.getNameColPostion()){
+            String value =  cellValue( row , colPos);
+            if(! StringUtils.isBlank( value)){
+                syncKnowNamePosition = colPos;
+                flag ++;
+                if ( flag > 1 ){
+                    bgColorRedCell(style, colPos , row);
+//                    row.getCell(colPos).setCellStyle( style );
+                    checkRresult = false;
+                    System.out.println( " 行row = " + row.getRowNum() + " 有多个知识点，请检查!" );
+                }
+                value = value.replace("<split-tag>","");
+                if( value.indexOf( " ")  < 0 ){
+                    bgColorRedCell(styleYellow, colPos , row);
+                    row.getCell(colPos).setCellStyle( styleYellow );
+                    checkRresult = false;
+                    System.out.println( " 行row = " + row.getRowNum() + " 序号与知识点中间没有空格" );
+                }
+            }
+        }
+        result.put( "checkRresult" , checkRresult );
+        result.put( "syncKnowNamePosition" , syncKnowNamePosition);
+        return  result;
+
+    }
+
+    private SyncKnowBaseInfo initSyncKnowBaseInfoParam(Sheet sheet, CellStyle style) {
+        SyncKnowBaseInfo syncKnowBaseInfo = new SyncKnowBaseInfo();
+        Row oneRow = sheet.getRow(0);
+        for (int i = 0; i < oneRow.getLastCellNum(); i++) {
+            Cell cell = oneRow.getCell(i);
+            switch (cell.getCellType()) {
+                case HSSFCell.CELL_TYPE_STRING:
+                    String value = cell.getStringCellValue();
+
+                    syncKnowBaseInfoRegister(syncKnowBaseInfo, i, value);
+                    break;
+                case HSSFCell.CELL_TYPE_NUMERIC:
+                    cell.setCellStyle(style);
+                    System.out.println("首行出错，不应该有数字类型的数据");
+                    break;
+            }
+        }
+        return syncKnowBaseInfo;
+    }
+
+    private void syncKnowBaseInfoRegister(SyncKnowBaseInfo syncKnowBaseInfo, int i, String value) {
+        switch (value.trim()) {
+            case "学段":
+                syncKnowBaseInfo.setSection(i);
+                break;
+            case "科目":
+                syncKnowBaseInfo.setSubject(i);
+                break;
+            case "书本":
+                syncKnowBaseInfo.setBookVersion(i);
+                break;
+            case "教材版本":
+                syncKnowBaseInfo.setPublishVersion(i);
+                break;
+            case "专题知识点序号":
+                syncKnowBaseInfo.setKnowledgeNumber(i);
+                break;
+            case "专题知识点":
+                syncKnowBaseInfo.setKnowName(i);
+                break;
+            case "一级章节":
+                if (syncKnowBaseInfo.getName2position().containsKey(value.trim())) {
+                    System.out.println(value.trim() + "---->存在多个");
+                } else {
+                    syncKnowBaseInfo.getName2position().put(value.trim(), i);
+                    syncKnowBaseInfo.getNameColPostion().add( i );
+                }
+                break;
+            case "二级章节":
+                if (syncKnowBaseInfo.getName2position().containsKey(value.trim())) {
+                    System.out.println(value.trim() + "---->存在多个");
+                } else {
+                    syncKnowBaseInfo.getName2position().put(value.trim(), i);
+                    syncKnowBaseInfo.getNameColPostion().add( i );
+                }
+                break;
+            case "三级章节":
+                if (syncKnowBaseInfo.getName2position().containsKey(value.trim())) {
+                    System.out.println(value.trim() + "---->存在多个");
+                } else {
+                    syncKnowBaseInfo.getName2position().put(value.trim(), i);
+                    syncKnowBaseInfo.getNameColPostion().add( i );
+                }
+                break;
+            case "四级章节":
+                if (syncKnowBaseInfo.getName2position().containsKey(value.trim())) {
+                    System.out.println(value.trim() + "---->存在多个");
+                } else {
+                    syncKnowBaseInfo.getName2position().put(value.trim(), i);
+                    syncKnowBaseInfo.getNameColPostion().add( i );
+                }
+                break;
+            case "五级章节":
+                if (syncKnowBaseInfo.getName2position().containsKey(value.trim())) {
+                    System.out.println(value.trim() + "---->存在多个");
+                } else {
+                    syncKnowBaseInfo.getName2position().put(value.trim(), i);
+                    syncKnowBaseInfo.getNameColPostion().add( i );
+                }
+                break;
+            case "六级章节":
+                if (syncKnowBaseInfo.getName2position().containsKey(value.trim())) {
+                    System.out.println(value.trim() + "---->存在多个");
+                } else {
+                    syncKnowBaseInfo.getName2position().put(value.trim(), i);
+                    syncKnowBaseInfo.getNameColPostion().add( i );
+                }
+                break;
+            case "七级章节":
+                if (syncKnowBaseInfo.getName2position().containsKey(value.trim())) {
+                    System.out.println(value.trim() + "---->存在多个");
+                } else {
+                    syncKnowBaseInfo.getName2position().put(value.trim(), i);
+                    syncKnowBaseInfo.getNameColPostion().add( i );
+                }
+                break;
+            case "八级章节":
+                if (syncKnowBaseInfo.getName2position().containsKey(value.trim())) {
+                    System.out.println(value.trim() + "---->存在多个");
+                } else {
+                    syncKnowBaseInfo.getName2position().put(value.trim(), i);
+                    syncKnowBaseInfo.getNameColPostion().add( i );
+                }
+                break;
+            case "九级章节":
+                if (syncKnowBaseInfo.getName2position().containsKey(value.trim())) {
+                    System.out.println(value.trim() + "---->存在多个");
+                } else {
+                    syncKnowBaseInfo.getName2position().put(value.trim(), i);
+                    syncKnowBaseInfo.getNameColPostion().add( i );
+                }
+                break;
+            case "十级章节":
+                if (syncKnowBaseInfo.getName2position().containsKey(value.trim())) {
+                    System.out.println(value.trim() + "---->存在多个");
+                } else {
+                    syncKnowBaseInfo.getName2position().put(value.trim(), i);
+                    syncKnowBaseInfo.getNameColPostion().add( i );
+                }
+                break;
+        }
+
     }
 
 

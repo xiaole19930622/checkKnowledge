@@ -1,18 +1,18 @@
 package com.xuebang.o2o.business.entity;
 
-import javax.persistence.Entity;
-import javax.persistence.Id;
-import javax.persistence.Table;
+import com.xuebang.o2o.core.repository.entity.LongIdEntity;
+
+import javax.persistence.*;
 
 /**
  * Created by Administrator on 2016/7/26.
  */
 @Entity
 @Table(name = "sync_knowledge")
-public class SysnKnowledge {
+public class SysnKnowledge extends LongIdEntity{
 
-    @Id
-    private Long id;
+
+    private String number;//本知识点的序号
 
     private String name;
 
@@ -20,9 +20,8 @@ public class SysnKnowledge {
 
     private String subject;
 
-    private String parent;
+    private SysnKnowledge parent;
 
-    private Long parentId;
 
     private String publishVersion;//教材版本
 
@@ -33,7 +32,7 @@ public class SysnKnowledge {
     private String  knowNumber;//专题知识点序号
 
 
-    private Long knowId;//专题知识点id
+    private Knowledge knowledge;//专题知识点id
 
     private Integer sort;
 
@@ -64,29 +63,16 @@ public class SysnKnowledge {
         this.subject = subject;
     }
 
-    public String getParent() {
+    @ManyToOne
+    @JoinColumn
+    public SysnKnowledge getParent() {
         return parent;
     }
 
-    public void setParent(String parent) {
+    public void setParent(SysnKnowledge parent) {
         this.parent = parent;
     }
 
-    public Long getParentId() {
-        return parentId;
-    }
-
-    public void setParentId(Long parentId) {
-        this.parentId = parentId;
-    }
-
-    public Long getId() {
-        return id;
-    }
-
-    public void setId(Long id) {
-        this.id = id;
-    }
 
     public String getPublishVersion() {
         return publishVersion;
@@ -120,13 +106,7 @@ public class SysnKnowledge {
         this.knowNumber = knowNumber;
     }
 
-    public Long getKnowId() {
-        return knowId;
-    }
 
-    public void setKnowId(Long knowId) {
-        this.knowId = knowId;
-    }
 
     public Integer getSort() {
         return sort;
@@ -142,5 +122,23 @@ public class SysnKnowledge {
 
     public void setIsLeaf(Integer isLeaf) {
         this.isLeaf = isLeaf;
+    }
+
+    public String getNumber() {
+        return number;
+    }
+
+    public void setNumber(String number) {
+        this.number = number;
+    }
+
+    @ManyToOne
+    @JoinColumn
+    public Knowledge getKnowledge() {
+        return knowledge;
+    }
+
+    public void setKnowledge(Knowledge knowledge) {
+        this.knowledge = knowledge;
     }
 }
