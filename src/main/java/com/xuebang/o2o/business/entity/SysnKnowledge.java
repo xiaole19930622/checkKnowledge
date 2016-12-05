@@ -1,15 +1,18 @@
 package com.xuebang.o2o.business.entity;
 
+import com.fasterxml.jackson.annotation.JsonIgnore;
 import com.xuebang.o2o.core.repository.entity.LongIdEntity;
+import com.xuebang.o2o.core.repository.entity.TreeIdEntity;
 
 import javax.persistence.*;
+import java.util.List;
 
 /**
  * Created by Administrator on 2016/7/26.
  */
 @Entity
 @Table(name = "sync_knowledge")
-public class SysnKnowledge extends LongIdEntity{
+public class SysnKnowledge extends TreeIdEntity<SysnKnowledge>{
 
 
     private String number;//本知识点的序号
@@ -22,6 +25,7 @@ public class SysnKnowledge extends LongIdEntity{
 
     private SysnKnowledge parent;
 
+    private List<SysnKnowledge> children;//子节点
 
     private String publishVersion;//教材版本
 
@@ -69,6 +73,13 @@ public class SysnKnowledge extends LongIdEntity{
         return parent;
     }
 
+    @JsonIgnore
+    @OneToMany(mappedBy = "parent")
+    public List<SysnKnowledge> getChildren() {
+        return children;
+    }
+
+
     public void setParent(SysnKnowledge parent) {
         this.parent = parent;
     }
@@ -108,7 +119,7 @@ public class SysnKnowledge extends LongIdEntity{
 
 
 
-    public Integer getSort() {
+    public int getSort() {
         return sort;
     }
 
@@ -140,5 +151,28 @@ public class SysnKnowledge extends LongIdEntity{
 
     public void setKnowledge(Knowledge knowledge) {
         this.knowledge = knowledge;
+    }
+
+    public void setChildren(List<SysnKnowledge> children) {
+        this.children = children;
+    }
+
+    @Override
+    public String toString() {
+        return "SysnKnowledge{" +
+                "number='" + number + '\'' +
+                ", name='" + name + '\'' +
+                ", section='" + section + '\'' +
+                ", subject='" + subject + '\'' +
+                ", parent=" + parent +
+                ", children=" + children +
+                ", publishVersion='" + publishVersion + '\'' +
+                ", bookVersion='" + bookVersion + '\'' +
+                ", knowName='" + knowName + '\'' +
+                ", knowNumber='" + knowNumber + '\'' +
+                ", knowledge=" + knowledge +
+                ", sort=" + sort +
+                ", isLeaf=" + isLeaf +
+                '}';
     }
 }

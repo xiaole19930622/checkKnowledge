@@ -13,7 +13,7 @@ public interface ITreeNode<T extends ITreeNode> {
      *
      * @return
      */
-    String getId();
+    Integer getId();
 
     /**
      * 获取节点名称

@@ -6,6 +6,7 @@ import org.springframework.stereotype.Controller;
 import org.springframework.web.bind.annotation.RequestMapping;
 import org.springframework.web.bind.annotation.ResponseBody;
 
+import java.awt.print.Book;
 import java.io.IOException;
 
 /**
@@ -13,7 +14,7 @@ import java.io.IOException;
  * Created by xiaole on 2016/11/9.
  */
 @Controller
-@RequestMapping("chechKnow")
+@RequestMapping("checkKnow")
 public class CheckKnowledgeController {
 
     @Autowired
@@ -22,8 +23,13 @@ public class CheckKnowledgeController {
     @RequestMapping("checkKnow")
     @ResponseBody
     public String checkKnow( String filePath ) throws IOException {
-        String result =  checkKnowledgeService.check(filePath);
-        return result;
+        boolean result =  checkKnowledgeService.check(filePath);
+        if( result){
+            return  "知识点正确，可以导入";
+        }else {
+            return "知识点有误，请检查对应的错误excel";
+        }
+
     }
 
 }

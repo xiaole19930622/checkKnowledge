@@ -9,5 +9,5 @@ import java.io.IOException;
 public interface CheckKnowledgeService {
 
 
-    public String check(String filePath) throws IOException;
+    public boolean check(String filePath) throws IOException;
 }

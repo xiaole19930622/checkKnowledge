@@ -35,7 +35,7 @@ public class CheckKnowledgeServiceImpl implements CheckKnowledgeService {
     private KnowledgeDao knowledgeDao;
 
     @Override
-    public String check(String filePath) throws IOException {
+    public boolean check(String filePath) throws IOException {
         boolean isE2007 = false;    //判断是否是excel2007格式
         if (filePath.endsWith("xlsx"))
             isE2007 = true;
@@ -62,11 +62,21 @@ public class CheckKnowledgeServiceImpl implements CheckKnowledgeService {
 
         /** 所有知识点的map*/
         Map<String , List >  allKnows = new HashMap<>();
+
+        boolean flag = true;
+
         //读取所有的sheet页
         /** 规定第一个sheet页必须是专题知识点  */
         for (int i = 0; i < wb.getNumberOfSheets(); i++) {
             boolean tempResult = true;
-            if (i == 0) {
+            boolean sheetHidden =  wb.isSheetHidden(i);
+
+            if( sheetHidden ){
+                continue;
+            }
+            System.out.println( "sheetHidden = " + sheetHidden);
+            if ( flag ) {
+                flag = false;
                 if (wb.getSheetAt(i).getSheetName().indexOf("专题") > -1) {
                     //专题知识点的处理
                     tempResult =  knowledgeCheck(wb.getSheetAt(i), style ,allKnows);
@@ -107,7 +117,7 @@ public class CheckKnowledgeServiceImpl implements CheckKnowledgeService {
             }
         }
 
-        return null;
+        return checkRresult;
     }
 
 
@@ -145,29 +155,31 @@ public class CheckKnowledgeServiceImpl implements CheckKnowledgeService {
         }
 
 
-        /**导入知识点*/
-        for (int i = 1; i < sheet.getLastRowNum() + 1; i++) {
-            Row row = sheet.getRow(i);
-            boolean knowNameCellTotalNull = isNnowNameCellTotalNull(knowBaseInfo.getNameColPostion(), row);
-            if( knowNameCellTotalNull ){
-                continue;
-            }
+        if ( checkRresult ) {
+            /**导入知识点*/
+            for (int i = 1; i < sheet.getLastRowNum() + 1; i++) {
+                Row row = sheet.getRow(i);
+                boolean knowNameCellTotalNull = isNnowNameCellTotalNull(knowBaseInfo.getNameColPostion(), row);
+                if( knowNameCellTotalNull ){
+                    continue;
+                }
 
 
-            int flagNumer = 0;
-            Knowledge knowledge = new Knowledge();
-            for (int j = 0; j < (int) row.getLastCellNum() + 1; j++) {
-                flagNumer = registerKnowledge(sheet, knowBaseInfo, row, flagNumer, knowledge, j);
+                int flagNumer = 0;
+                Knowledge knowledge = new Knowledge();
+                for (int j = 0; j < (int) row.getLastCellNum() + 1; j++) {
+                    flagNumer = registerKnowledge(sheet, knowBaseInfo, row, flagNumer, knowledge, j);
+                }
+                if( flagNumer != 0 ){
+                    knowBaseInfo.getPosition2Objec().put( flagNumer , knowledge);
+                }else {
+                    System.out.println( "行位置为 "+ i+1 + "，出现错误，请检查 ");
+                }
+                knowledges.add( knowledge );
             }
-            if( flagNumer != 0 ){
-                knowBaseInfo.getPosition2Objec().put( flagNumer , knowledge);
-            }else {
-                System.out.println( "行位置为 "+ i+1 + "，出现错误，请检查 ");
-            }
-            knowledges.add( knowledge );
+
+            allKnows.put( "knows" , knowledges );
         }
-
-        allKnows.put( "knows" , knowledges );
 //        knowledgeDao.save( knowledges );
         return   checkRresult ;
     }
@@ -350,6 +362,14 @@ public class CheckKnowledgeServiceImpl implements CheckKnowledgeService {
      * @param value
      */
     private void knowBaseInfoRegister(KnowBaseInfo knowBaseInfo, int i, String value) {
+        if( value.trim() != null ){
+            if( value.trim().indexOf("学段") > -1 || value.trim().indexOf("级专题知识点") > -1 || value.trim().indexOf("专题知识点序号") > -1 ||  value.trim().indexOf("科目") > -1 || value.trim().indexOf("编号") > -1){
+
+            }else{
+                throw new RuntimeException("列头：<"+value.trim()+">有误,请检查");
+            }
+        }
+
         switch (value.trim()) {
             case "学段":
                 knowBaseInfo.setSection(i);
@@ -494,29 +514,31 @@ public class CheckKnowledgeServiceImpl implements CheckKnowledgeService {
         }
 
 
-        /**导入知识点*/
-        for (int i = 1; i < sheet.getLastRowNum() + 1; i++) {
-            Row row = sheet.getRow(i);
-            boolean knowNameCellTotalNull = isNnowNameCellTotalNull(syncKnowBaseInfo.getNameColPostion(), row);
-            if( knowNameCellTotalNull ){
-                continue;
+        if ( checkRresult ) {
+            /**导入知识点*/
+            for (int i = 1; i < sheet.getLastRowNum() + 1; i++) {
+                Row row = sheet.getRow(i);
+                boolean knowNameCellTotalNull = isNnowNameCellTotalNull(syncKnowBaseInfo.getNameColPostion(), row);
+                if( knowNameCellTotalNull ){
+                    continue;
+                }
+
+                int flagNumer = 0;
+                SysnKnowledge sysnKnowledge = new SysnKnowledge();
+                for (int j = 0; j < (int) row.getLastCellNum() + 1; j++) {
+                    flagNumer = registerSyncKnowledge(sheet, syncKnowBaseInfo, row, flagNumer, sysnKnowledge, j ,allKnows);
+    //                registerKnowledge();
+                }
+                if( flagNumer != 0 ){
+                    syncKnowBaseInfo.getPosition2Objec().put( flagNumer , sysnKnowledge);
+                }else {
+                    System.out.println( "行位置为 "+ i+1 + "，出现错误，请检查 ");
+                }
+                sysnKnowledges.add( sysnKnowledge );
             }
 
-            int flagNumer = 0;
-            SysnKnowledge sysnKnowledge = new SysnKnowledge();
-            for (int j = 0; j < (int) row.getLastCellNum() + 1; j++) {
-                flagNumer = registerSyncKnowledge(sheet, syncKnowBaseInfo, row, flagNumer, sysnKnowledge, j ,allKnows);
-//                registerKnowledge();
-            }
-            if( flagNumer != 0 ){
-                syncKnowBaseInfo.getPosition2Objec().put( flagNumer , sysnKnowledge);
-            }else {
-                System.out.println( "行位置为 "+ i+1 + "，出现错误，请检查 ");
-            }
-            sysnKnowledges.add( sysnKnowledge );
+            allKnows.put( "syncknows" + sheet.getWorkbook().getNameIndex( sheet.getSheetName()) , sysnKnowledges );
         }
-
-        allKnows.put( "syncknows" + sheet.getWorkbook().getNameIndex( sheet.getSheetName()) , sysnKnowledges );
 
 
         return checkRresult;
@@ -786,6 +808,9 @@ public class CheckKnowledgeServiceImpl implements CheckKnowledgeService {
     private SyncKnowBaseInfo initSyncKnowBaseInfoParam(Sheet sheet, CellStyle style) {
         SyncKnowBaseInfo syncKnowBaseInfo = new SyncKnowBaseInfo();
         Row oneRow = sheet.getRow(0);
+        if( oneRow == null ){
+            throw new RuntimeException(sheet.getSheetName()+"有误，请检查");
+        }
         for (int i = 0; i < oneRow.getLastCellNum(); i++) {
             Cell cell = oneRow.getCell(i);
             switch (cell.getCellType()) {
@@ -804,6 +829,14 @@ public class CheckKnowledgeServiceImpl implements CheckKnowledgeService {
     }
 
     private void syncKnowBaseInfoRegister(SyncKnowBaseInfo syncKnowBaseInfo, int i, String value) {
+          if( value.trim() != null ){
+            if( value.trim().indexOf("学段") > -1 || value.trim().indexOf("级章节") > -1 || value.trim().indexOf("专题知识点序号") > -1 ||  value.trim().indexOf("科目") > -1 || value.trim().indexOf("编号") > -1
+                    || value.trim().indexOf("专题知识点") > -1|| value.trim().indexOf("书本") > -1|| value.trim().indexOf("教材版本") > -1 ){
+
+            }else{
+                throw new RuntimeException("列头：<"+value.trim()+">有误,请检查");
+            }
+        }
         switch (value.trim()) {
             case "学段":
                 syncKnowBaseInfo.setSection(i);

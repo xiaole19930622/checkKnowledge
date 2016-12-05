@@ -24,15 +24,15 @@ public class TreeIdGenerator implements IdentifierGenerator {
         if (o instanceof ITreeNode) {
             ITreeNode entity = (ITreeNode) o;
             // 如果有传入ID则校验传入ID是否合法（顶层{everyLevelIdLength}位ID，下层ID需要以父节点ID开始且长度为父节点id + {everyLevelIdLength}）
-            if (StringUtils.isNotBlank(entity.getId())) {
+            if ( entity.getId() != null ) {
                 if (entity.getParent() == null) {
-                    if (entity.getId().length() == everyLevelIdLength) {
+                    if (entity.getId().toString().length() == everyLevelIdLength) {
                         return entity.getId();
                     } else {
                         throw new HibernateException("使用树型ID策略的实体传入ID不合法（顶层ID必须为" + everyLevelIdLength + "位字符）：" + o.getClass().getName());
                     }
                 } else {
-                    if (entity.getId().startsWith(entity.getParent().getId()) && entity.getId().length() == entity.getParent().getId().length() + everyLevelIdLength) {
+                    if (entity.getId().toString().startsWith(entity.getParent().getId().toString()) && entity.getId().toString().length() == entity.getParent().getId().toString().length() + everyLevelIdLength) {
                         return entity.getId();
                     } else {
                         throw new HibernateException("使用树型ID策略的实体传入ID不合法：节点ID必须以父节点ID起始且长度=父节点ID长度+" + everyLevelIdLength);
@@ -50,9 +50,9 @@ public class TreeIdGenerator implements IdentifierGenerator {
                 if (entity.getParent() == null) { // 顶层节点
                     builder.setQuery("select max(id) from " + o.getClass().getName());
                 } else { // 子节点
-                    if (StringUtils.isNotBlank(entity.getParent().getId())) {
+                    if (StringUtils.isNotBlank(entity.getParent().getId().toString())) {
                         newId.append(entity.getParent().getId());
-                        builder.setQuery("select right(max(id)," + everyLevelIdLength + ") from " + tableName + " where length(id) = " + (entity.getParent().getId().length() + everyLevelIdLength) + " and parent = '" + entity.getParent().getId() + "'");
+                        builder.setQuery("select right(max(id)," + everyLevelIdLength + ") from " + tableName + " where length(id) = " + (entity.getParent().getId().toString().length() + everyLevelIdLength) + " and parent = '" + entity.getParent().getId() + "'");
                     } else {
                         throw new HibernateException("使用树型ID策略的实体父节点ID为空：" + o.getClass().getName());
                     }

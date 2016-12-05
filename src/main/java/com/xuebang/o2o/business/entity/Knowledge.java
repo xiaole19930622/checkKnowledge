@@ -1,17 +1,17 @@
 package com.xuebang.o2o.business.entity;
 
+import com.fasterxml.jackson.annotation.JsonIgnore;
 import com.xuebang.o2o.core.repository.entity.LongIdEntity;
+import com.xuebang.o2o.core.repository.entity.TreeIdEntity;
 
-import javax.persistence.Entity;
-import javax.persistence.Id;
-import javax.persistence.JoinColumn;
-import javax.persistence.ManyToOne;
+import javax.persistence.*;
+import java.util.List;
 
 /**
  * Created by Administrator on 2016/7/26.
  */
 @Entity
-public class Knowledge extends LongIdEntity{
+public class Knowledge extends TreeIdEntity<Knowledge>{
 
     private String name;
 
@@ -23,12 +23,11 @@ public class Knowledge extends LongIdEntity{
 
     private Knowledge parent;
 
-    private Long parentId;
+    private List<Knowledge> children;
 
     private Integer sort;
 
     private Integer isLeaf; //是否叶子节点 0 不是  1是
-
 
 
     public String getName() {
@@ -69,29 +68,32 @@ public class Knowledge extends LongIdEntity{
         return parent;
     }
 
+
+    @JsonIgnore
+    @OneToMany(mappedBy = "parent")
+    public List<Knowledge> getChildren() {
+        return children;
+    }
+
     public void setParent(Knowledge parent) {
         this.parent = parent;
     }
 
-    public Long getParentId() {
-        return parentId;
-    }
-
-    public void setParentId(Long parentId) {
-        this.parentId = parentId;
-    }
-
-
     @Override
     public String toString() {
         return "Knowledge{" +
-                "number='" + number + '\'' +
-                ", parent='" + parent + '\'' +
-                ", name='" + name + '\'' +
+                "name='" + name + '\'' +
+                ", section='" + section + '\'' +
+                ", number='" + number + '\'' +
+                ", subject='" + subject + '\'' +
+                ", parent=" + parent +
+                ", children=" + children +
+                ", sort=" + sort +
+                ", isLeaf=" + isLeaf +
                 '}';
     }
 
-    public Integer getSort() {
+    public int getSort() {
         return sort;
     }
 
@@ -105,5 +107,9 @@ public class Knowledge extends LongIdEntity{
 
     public void setIsLeaf(Integer isLeaf) {
         this.isLeaf = isLeaf;
+    }
+
+    public void setChildren(List<Knowledge> children) {
+        this.children = children;
     }
 }

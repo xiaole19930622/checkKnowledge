@@ -46,7 +46,7 @@ public class HttpExceptionHandler {
     @ResponseBody
     public Response handleException(HttpServletRequest request, Exception ex) {
         logger.error("发生系统错误，请联系管理员", ex);
-        Response response = new Response(false, "发生系统错误，请联系管理员");
+        Response response = new Response(false, ex.getMessage());
         return response;
     }
 

@@ -10,7 +10,7 @@ import java.util.*;
  */
 public class TreeNode implements ITreeNode<TreeNode>,Comparable<TreeNode>{
 
-    private String id; // ID
+    private Integer id; // ID
 
     private String name; // 节点名称
 
@@ -88,11 +88,13 @@ public class TreeNode implements ITreeNode<TreeNode>,Comparable<TreeNode>{
         }
     }
 
-    public String getId() {
+
+    @Override
+    public Integer getId() {
         return id;
     }
 
-    public void setId(String id) {
+    public void setId(Integer id) {
         this.id = id;
     }
 

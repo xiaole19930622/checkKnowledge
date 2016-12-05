@@ -13,14 +13,14 @@ import java.io.Serializable;
 @MappedSuperclass
 public abstract class TreeEntityWithoutIdStrategy<T extends TreeEntityWithoutIdStrategy> implements Serializable, ITreeNode<T> {
 
-    protected String id; // 树型ID
+    protected Integer id; // 树型ID
 
     @Id
-    public String getId() {
+    public Integer getId() {
         return id;
     }
 
-    public void setId(String id) {
+    public void setId(Integer id) {
         this.id = id;
     }
 

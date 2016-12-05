@@ -15,17 +15,18 @@ import java.io.Serializable;
 @MappedSuperclass
 public abstract class TreeIdEntity<T extends TreeIdEntity> implements Serializable,ITreeNode<T> {
 
-    protected String id; // 树型ID
+    protected Integer id; // 树型ID
 
     @Id
     @GenericGenerator(name = "generator", strategy = "com.xuebang.o2o.core.repository.strategy.TreeIdGenerator")
     @GeneratedValue(generator = "generator")
-    public String getId() {
+
+    @Override
+    public Integer getId() {
         return id;
     }
 
-    public void setId(String id) {
+    public void setId(Integer id) {
         this.id = id;
     }
-
 }
